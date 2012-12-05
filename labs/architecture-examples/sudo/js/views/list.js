@@ -11,7 +11,6 @@ todo.List = function(el, data) {
 	this.allCheckbox = this.$('#toggle-all')[0];
 	this.$footer = this.$('#footer');
 	this.$main = this.$('#main');
-	this.render();
 };
 
 // List inherits from sudo.ViewController -- we prefer explicitness
@@ -19,8 +18,7 @@ todo.List.prototype = Object.create(sudo.ViewController.prototype);
 
 // Override the base addChild method to accept an object literal
 // containing title and completed state (since we are only adding todos).
-// The optional `hold` will prevent unnecessary rendering
-todo.List.prototype.addChild = function(info, hold) {
+todo.List.prototype.addChild = function(info) {
 	var child = new todo.Item(null, {
 		title: info.title,
 		completed: info.completed,
@@ -29,19 +27,15 @@ todo.List.prototype.addChild = function(info, hold) {
 	// call to `super`
 	this.base('addChild', child);
 	// was this a completed child?
-	if(info.completed) this.addCompleted(child, true);
-	if(!hold) {
-		this.persist().render();
-	}
+	if(info.completed) this.addCompleted(child);
+	else this.persist().render();
 };
 // A `sendTarget` method for child objects.
 // All sudo.Control types send themselves as an arg to a `sendTarget` method
-todo.List.prototype.addCompleted = function(child, hold) {
+todo.List.prototype.addCompleted = function(child) {
 	this.get('completed').push(child);
-	// save and refresh stats unless told not to
-	if (!hold) {
-		this.persist().render();
-	}
+	// save and refresh stats
+	this.persist().render();
 };
 
 // Clear all completed todo items, removing them.
@@ -63,12 +57,30 @@ todo.List.prototype.createOnEnter = function(e) {
 	this.addChild({title: title, completed: false});
 	// clear the input `title` field
 	this.$input.val('');
+	// enforce current filter
+	this.filter();
+};
+
+// Enforce the current filter state after actions that can create
+// disjoints occur.
+// Achieved by setting the location objects most recent parsed 
+// `url fragment` into the todo model triggering change observers
+todo.List.prototype.filter = function() {
+	todo.model.set(todo.location.get('fragment'));
+};
+
+// Observing the model
+todo.List.prototype.handleChange = function(change) {
+	if(change.name === 'persistedTodos') {
+		this.parsePersisted(change.object[change.name]);
+		// all other changes are filter related
+	} else this.render();
 };
 
 // At initialization we register as an `observer` of the Observable model
 // and bind some event listeners...
 todo.List.prototype.init = function() {
-	todo.model.observe(this.parsePersisted.bind(this));
+	todo.model.observe(this.handleChange.bind(this));
 	// listening for the clear-completed button click, delegated to this.$el
 	this.$el.on('click', '#clear-completed', this.clearCompleted.bind(this));
 	// listening for the making of new todos
@@ -77,24 +89,14 @@ todo.List.prototype.init = function() {
 	this.$('#toggle-all').on('click', this.toggleAllComplete.bind(this));
 };
 
-// add children from the persisted JSON string contained
-// in the change record
-todo.List.prototype.parsePersisted = function(change) {
-	if(change.name === 'persistedTodos') {
+// add children from the persisted JSON string
+todo.List.prototype.parsePersisted = function(ary) {
+	JSON.parse(ary).forEach(function(saved) {
+		this.addChild(saved);
+	}.bind(this));
 
-		var ary = JSON.parse(change.object[change.name]), 
-			child;
-		
-		ary.forEach(function(saved) {
-			this.addChild(saved);
-		}.bind(this));
-
-		// refresh stats
-		this.render();
-
-		// check for a mismatch in the current filter-state
-		todo.model.set(todo.location.get('fragment'), {});
-	}
+	// check active filter state
+	this.filter();
 };
 
 // To persis the todo list, I will hand my current children collection to
@@ -106,34 +108,31 @@ todo.List.prototype.persist = function() {
 
 // A `sendTarget` method for child objects.
 // All sudo.Control types send themselves as an arg to a `sendTarget` method
-todo.List.prototype.removeCompleted = function(child, hold) {
+todo.List.prototype.removeCompleted = function(child) {
 	var comp = this.get('completed'),
 		index = comp.indexOf(child);
-	if(index !== -1) comp.splice(index, 1);
-	// refresh stats unless told not too
-	if(!hold) {
-		this.persist().render();
-	}
+	comp.splice(index, 1);
+	// refresh stats
+	this.persist().render();
 };
 
 // Override the base removeChild to remove the DOM and call
 // render so the stats are refreshed.
-// The optional `hold` are is so we don't call render repeatedly
-// in a loop (like clearCompleted).
 // Also, this method will be called from a child todo whose `x`
 // button has been clicked - ignore the `event` argument in that case
+// optional hold only sent from clearCompleted method
 todo.List.prototype.removeChild = function(child, hold) {
-	// normalize the input, we want to ignore the event arg if passed
+	// could have been called from the child's destroy action
+	// we are not interested in the event object in this case
 	hold = typeof hold === 'boolean' ? hold : void 0;
 	// call to method on `super`
 	this.base('removeChild', child);
 	// by default, sudo containers do not modify their children's $el
 	child.$el.remove();
-	// save state and refresh unless told not to
+	// save state and refresh, unless told not to
 	if(!hold) {
-		// modify the `completed` list in the singular case
-		this.removeCompleted(child, true);
-		this.persist().render();
+		if(child.get('completed')) this.removeCompleted(child);
+		else this.persist().render();
 	}
 };
 
@@ -167,10 +166,10 @@ todo.List.prototype.render =  function() {
 todo.List.prototype.toggleAllComplete = function() {
 	var completed = this.allCheckbox.checked;
 	this._children_.forEach(function(child) {
-		// Dataview child will auto update as we set autoRender to true,
+		// Dataview child will auto update,
 		// but only if the state differs from that selected
 		if(child.get('completed') !== completed) child.toggleCompleted(completed);
 	}.bind(this));
-	// save state and refresh
-	this.persist().render();
+	// enforce the active filter state
+	this.filter();
 };

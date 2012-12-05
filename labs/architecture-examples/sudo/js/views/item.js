@@ -62,7 +62,7 @@ todo.Item.prototype.edited = function() {
 		this.$el.removeClass('editing');
 	}
 	// no title means you don't want this todo
-	else this.send('removeTodo');
+	else this.send('removeChild');
 };
 
 // Re-render the title if changed, overrides base render method 
@@ -84,8 +84,9 @@ todo.Item.prototype.toggleCompleted = function(arg) {
 	arg = typeof arg === 'boolean' ? arg : void 0;
 	this.set('completed', arg || !this.get('completed'));
 	// send a message that I have marked myself (in)complete
-	this.get('completed') ? this.send('addCompleted', arg ? true : false) : 
-		this.send('removeCompleted', arg ? true : false);
+	this.get('completed') ? this.send('addCompleted') : this.send('removeCompleted');
+	// parent should enforce the active filter state
+	this.send('filter');
 };
 
 // should I show or hide based on a selected `filter`
@@ -95,7 +96,7 @@ todo.Item.prototype.toggleVisible = function(change) {
 	var name = change.name, 
 		comp = this.get('completed');
 	// all (and no filter) means show everybody
-	if(name === 'all' || !name)  return this.$el.removeClass('hidden');
+	if(!name)  return this.$el.removeClass('hidden');
 	// toggle via completed true/false && filter
 	this.$el.toggleClass('hidden', ((comp && name === 'active') || (!comp && name === 'completed')));
 };

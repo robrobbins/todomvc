@@ -15,8 +15,8 @@ todo.Model.prototype = Object.create(sudo.Observable.prototype);
 todo.Model.prototype.getPersisted = function() {
 	// retreive the JSON string and set it, allowing the ViewController
 	// to instantiate the children via the changeRecord
-	var json = localStorage.getItem(this.key);
-	if(json) this.set('persistedTodos', json);
+	// if LS is empty set the empty array
+	this.set('persistedTodos', localStorage.getItem(this.key) || '[]');
 };
 
 // simplify and stringify the child collection (passed from the todo.list)
