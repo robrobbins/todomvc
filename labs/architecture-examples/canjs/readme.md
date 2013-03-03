@@ -1,57 +1,42 @@
-## CanJS TodoMVC Demos
+# CanJS
 
-This project contains a collection of [TodoMVC](https://github.com/addyosmani/todomvc/) demos using [CanJS](https://github.com/jupiterjs/canjs) with the different libraries that it supports.
+CanJS is a client-side, JavaScript framework that makes building rich web applications easy. It provides:
 
-### Demos
+ - *can.Model* - for connecting to RESTful JSON interfaces
+ - *can.View* - for template loading and caching
+ - *can.Observe* - for key-value binding
+ - *can.EJS* - live binding templates
+ - *can.Control* - declarative event bindings
+ - *can.route* - routing support
 
-- [jquery](http://donejs.com/examples/todo/jquery/): CanJS with jQuery
-- [jquery-widget](http://donejs.com/examples/todo/jquery-widget/): CanJS with jQuery (includes a jQuery UI widget binding example)
-- [dojo](http://donejs.com/examples/todo/dojo/): CanJS with Dojo
-- [dojo-widget](http://donejs.com/examples/todo/dojo-widget/): CanJS with Dojo (includes a Dojo widget binding example)
-- [mootools](http://donejs.com/examples/todo/mootools/): CanJS with Mootools
-- [yui](http://donejs.com/examples/todo/yui/): CanJS with YUI
-- [yui-widget](http://donejs.com/examples/todo/yui-widget/): CanJS with YUI (includes a YUI widget binding example)
-- [zepto](http://donejs.com/examples/todo/zepto/): CanJS with Zepto
+And works with jQuery, Zepto, YUI, Dojo and Mootools.
 
-### Getting Started
+## CanJS and JavaScriptMVC
 
-To get these demos:
+*CanJS* is the extracted, more modern and more library-like MVC parts of [JavaScriptMVC](http://javascriptmvc.com)
+(formerly known as *jQueryMX*).
 
-1. Download the [latest release](#) or clone the project:
-```git clone git@github.com:jupiterjs/cantodo.git```
-2. Run these demos on a local server. Open the corresponding, self-named, demo page:
+*JavaScriptMVC 3.3* uses CanJS for the MVC structure so this TodoMVC example **applies to JavaScriptMVC** as well.
+Additionally JavaScriptMVC contains:
 
-	- `jquery`: `jquery/index.html`
-	- `jquery-widget`: `jquery-widget/index.html`
-	- `dojo`: `dojo/index.html`
-	- `dojo-widget`: `dojo-widget/index.html`
-	- `mootools`: `mootools/index.html`
-	- `yui`: `yui/index.html`
-	- `yui-widget`: `yui-widget/index.html`
-	- `zepto`: `zepto/index.html`
+- [CanJS](http://canjs.us) - For the MVC parts
+- [jQuery++](http://jquerypp.com) - jQuery's missing utils and special events
+- [StealJS](http://javascriptmvc.com/docs.html#!stealjs) - A JavaScript package manager
+- [DocumentJS](http://javascriptmvc.com/docs.html#!DocumentJS) - A documentation engine
+- [FuncUnit](http://funcunit.com) - jQuery style functional unit testing
 
-You can also use the [links above][demos] to view the demos live on donejs.com.
+## View engines
 
-### Testing
+CanJS supports both live binding [EJS](http://canjs.us/#can_ejs) and [Mustache/Handlebars](http://canjs.us/#can_mustache)
+templates. By default the Mustache view will be used but an EJS example is available as well.
+You can easily change it by modifying the `view` option in the `js/app.js` file:
 
-FuncUnit tests for each demo are included in the `test` directory.
-
-To run the unit tests:
-
-1. First update the submodules: 
-```git submodule update --init --recursive```
-2. Open the corresponding test page:
-
-	- `all frameworks`: `test/index.html`
-	- `jquery`: `test/jquery.html`
-	- `jquery-widget`: `test/jquery-widget.html`
-	- `dojo`: `test/dojo.html`
-	- `dojo-widget`: `test/dojo-widget.html`
-	- `mootools`: `test/mootools.html`
-	- `yui`: `test/yui.html`
-	- `yui-widget`: `test/yui-widget.html`
-	- `zepto`: `test/zepto.html`
-
----
-
-Created and maintained by [Bitovi](http://bitovi.com)
+```js
+Models.Todo.findAll({}, function(todos) {
+	new Todos('#todoapp', {
+		todos: todos,
+		state : can.route,
+		view : 'views/todos.ejs'
+	});
+});
+```
